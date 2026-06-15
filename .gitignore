@@ -24,3 +24,19 @@ Thumbs.db
 .commandcode/
 .env
 env
+
+node_modules/
+dist/
+.tmp/
+.env
+.vercel/
+output/*.md
+
+.gitignore
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

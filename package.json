@@ -1,0 +1,23 @@
+{
+  "name": "aitesterblueprint3x",
+  "version": "1.0.0",
+  "description": "A practical, project-driven curriculum for QA engineers learning to use LLMs as a real testing tool — not a toy. Each chapter pairs concept material with a hands-on project, a prompt template, and runnable code where applicable.",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saanvi614/AITesterBluePrint3X.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/saanvi614/AITesterBluePrint3X/issues"
+  },
+  "homepage": "https://github.com/saanvi614/AITesterBluePrint3X#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.9.3"
+  }
+}
