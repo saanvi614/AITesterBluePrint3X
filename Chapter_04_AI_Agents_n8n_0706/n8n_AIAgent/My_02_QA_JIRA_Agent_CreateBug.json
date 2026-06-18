@@ -1,5 +1,5 @@
 {
-  "name": "My_02_QA_JIRA_Agent",
+  "name": "My_02_QA_JIRA_Agent_CreateBug",
   "nodes": [
     {
       "parameters": {
