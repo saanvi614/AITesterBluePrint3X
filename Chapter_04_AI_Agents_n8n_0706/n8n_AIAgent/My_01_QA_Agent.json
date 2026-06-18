@@ -1,0 +1,102 @@
+{
+  "name": "My_01_QA_Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "authentication": "n8nUserAuth",
+        "initialMessages": "Hi there! 👋\nMy name is SwatiJ. How can I assist you today?",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -144,
+        -64
+      ],
+      "id": "8e079677-332d-4e05-b272-c6cbf4ada54a",
+      "name": "When chat message received",
+      "webhookId": "0c2f9623-66f0-4946-80e9-57fa7ebece25"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        80,
+        -64
+      ],
+      "id": "4577961a-9fb0-4c60-9a15-9ca6f4fe5a88",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-32b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        144
+      ],
+      "id": "b85406e3-3305-46a7-bdce-54c7358d29f3",
+      "name": "QWEN Brain",
+      "credentials": {
+        "groqApi": {
+          "id": "SZC5UXRzR7AM46wI",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QWEN Brain": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a2217172-0b7c-41c6-a363-f78971ee4488",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d4de019087f55b54aed73a797d016119a21544490082cd07b52d4bfbc2ad1a80"
+  },
+  "nodeGroups": [],
+  "id": "En2m6x4UFeIY7kWJ",
+  "tags": [
+    {
+      "updatedAt": "2026-06-07T06:48:29.174Z",
+      "createdAt": "2026-06-07T06:48:29.174Z",
+      "id": "VJhcpxrwtE5vBk79",
+      "name": "AI3X"
+    }
+  ]
+}
