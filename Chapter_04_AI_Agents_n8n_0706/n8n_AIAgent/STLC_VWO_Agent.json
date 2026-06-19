@@ -1,0 +1,497 @@
+{
+  "name": "STLC_VWO_Testing_Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## STLC Agent — VWO.com Testing Pipeline\n\n**What this workflow does:**\n1. Accepts a PRD document (PDF) via the form upload UI\n2. Extracts and processes the PRD content using n8n's PDF reader\n3. **Step 1 → Generate Test Plan** (Markdown, 12-section template)\n4. **Step 2 → Generate Test Cases** (CSV, 25+ cases for Login & Dashboard)\n5. **Step 3 → Generate Playwright Scripts** (TypeScript, Page Object Model)\n6. Saves all three files to disk under `./stlc_output/<timestamp>/`\n\n**Target:** https://app.vwo.com/\n- Login page (valid / invalid credential flows)\n- Dashboard (post-login verification)\n\n**Outputs:**\n- `test_plan.md`\n- `test_cases.csv`\n- `playwright_test_cases.md`",
+        "width": 560,
+        "height": 300,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-640, -400],
+      "id": "stlc-sticky-overview",
+      "name": "Sticky — Overview"
+    },
+    {
+      "parameters": {
+        "content": "## Setup Checklist\n\n**Before running this workflow:**\n\n☐ **Groq LLM** — node `Groq LLM`\n   Credential: `Groq account` (groqApi)\n   Model: `llama-3.3-70b-versatile`\n   ↳ Swap for DeepSeek / OpenAI / Claude if needed\n\n☐ **Output Path** — node `Write Output Files`\n   Edit `outputDir` variable if you want a custom save location\n   Default: `./stlc_output/<timestamp>/`\n\n☐ **Credentials** — only Groq API key required\n\n**How to run:**\n1. Activate the workflow\n2. Open the form URL shown in the Form Trigger node\n3. Upload the VWO PRD PDF\n4. Click \"Generate STLC Artifacts\"\n5. Check the n8n execution log for the output file paths",
+        "width": 480,
+        "height": 320,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-640, -40],
+      "id": "stlc-sticky-setup",
+      "name": "Sticky — Setup"
+    },
+    {
+      "parameters": {
+        "content": "## STEP 1\nUpload PRD PDF via form.\nPDF text is extracted and stored as `prdText`.",
+        "width": 260,
+        "height": 100,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [240, 120],
+      "id": "stlc-sticky-step1",
+      "name": "Sticky — Step 1"
+    },
+    {
+      "parameters": {
+        "content": "## STEP 2\nAI generates Test Plan (12 sections).\nOutput stored in `testPlan` field.",
+        "width": 260,
+        "height": 100,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1080, 120],
+      "id": "stlc-sticky-step2",
+      "name": "Sticky — Step 2"
+    },
+    {
+      "parameters": {
+        "content": "## STEP 3\nAI generates 25+ Test Cases in CSV format.\nCleaned and stored as `testCasesCSV`.",
+        "width": 260,
+        "height": 100,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1640, 120],
+      "id": "stlc-sticky-step3",
+      "name": "Sticky — Step 3"
+    },
+    {
+      "parameters": {
+        "content": "## STEP 4\nAI generates Playwright TypeScript specs.\nPage Object Model for Login + Dashboard.",
+        "width": 260,
+        "height": 100,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [2200, 120],
+      "id": "stlc-sticky-step4",
+      "name": "Sticky — Step 4"
+    },
+    {
+      "parameters": {
+        "content": "## STEP 5\nAll 3 files written to disk.\nPaths returned in execution log.",
+        "width": 240,
+        "height": 100,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [2760, 120],
+      "id": "stlc-sticky-step5",
+      "name": "Sticky — Step 5"
+    },
+    {
+      "parameters": {
+        "formTitle": "STLC Agent — Upload PRD",
+        "formDescription": "Upload a Product Requirements Document (PDF) to automatically generate: Test Plan, Test Cases (CSV), and Playwright TypeScript scripts.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "PRD Document (PDF)",
+              "fieldType": "file",
+              "fieldName": "prdFile",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Project Name (optional)",
+              "fieldType": "text",
+              "fieldName": "projectName",
+              "requiredField": false,
+              "placeholder": "VWO Digital Experience Platform"
+            },
+            {
+              "fieldLabel": "Feature / Focus Area (optional)",
+              "fieldType": "text",
+              "fieldName": "focusArea",
+              "requiredField": false,
+              "placeholder": "Login & Dashboard"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Generate STLC Artifacts",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Your PRD is being processed! All three STLC artifacts (Test Plan, Test Cases, Playwright Scripts) will be saved to the output directory. Check the n8n execution log for the exact file paths."
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [240, 300],
+      "id": "stlc-form-trigger",
+      "name": "Upload PRD Form",
+      "webhookId": "stlc-vwo-pipeline-form"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "prdFile",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [520, 300],
+      "id": "stlc-extract-pdf",
+      "name": "Extract PDF Text"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prd-text",
+              "name": "prdText",
+              "value": "={{ $json.text.length > 8000 ? $json.text.substring(0, 8000) + '\\n[...truncated for token limit]' : $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "project-name",
+              "name": "projectName",
+              "value": "={{ $('Upload PRD Form').item.json.projectName || 'VWO – Digital Experience Optimization Platform' }}",
+              "type": "string"
+            },
+            {
+              "id": "focus-area",
+              "name": "focusArea",
+              "value": "={{ $('Upload PRD Form').item.json.focusArea || 'Login & Dashboard' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [800, 300],
+      "id": "stlc-set-prd",
+      "name": "Set PRD Context"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "maxTokens": 8192,
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [1640, 600],
+      "id": "stlc-groq-llm",
+      "name": "Groq LLM",
+      "credentials": {
+        "groqApi": {
+          "id": "ZrAN47BmRD4wwS3y",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a comprehensive Test Plan for the following product.\n\nProject: {{ $json.projectName }}\nFocus Area: {{ $json.focusArea }}\n\n--- PRD CONTENT ---\n{{ $json.prdText }}\n--- END PRD ---",
+        "options": {
+          "systemMessage": "You are a QA Lead with 12+ years of experience. Generate a comprehensive, professional Test Plan in Markdown format.\n\nFOLLOW THIS EXACT 12-SECTION STRUCTURE:\n\n### 1. TEST PLAN OVERVIEW\n- Test Plan ID: TP-VWO-001\n- Project Name: [from PRD]\n- Feature/Module: Login & Dashboard\n- Prepared By: QA Team\n- Date: 2026-06-18\n- Version: 1.0\n\n### 2. OBJECTIVE\nWhat this test plan validates based on the PRD.\n\n### 3. SCOPE\n#### 3.1 In Scope\nList features to be tested.\n#### 3.2 Out of Scope\nList features NOT covered.\n\n### 4. TEST STRATEGY\n- Testing Types: Functional, Regression, Smoke, Integration\n- Testing Approach: Manual and Automated\n- Automation Tool: Playwright with TypeScript\n\n### 5. TEST ENVIRONMENT\n- Browsers: Chrome (latest), Firefox (latest), Edge (latest)\n- OS: Windows 11, macOS Ventura\n- Devices: Desktop (1920x1080), Tablet (768px), Mobile (375px)\n- Test Data Requirements: Valid credentials, invalid credentials, edge-case data\n\n### 6. ENTRY CRITERIA\nConditions that must be met before testing begins.\n\n### 7. EXIT CRITERIA\nConditions that indicate testing is complete.\n\n### 8. TEST SCENARIOS (High-Level)\nSummary table of key test scenarios with ID, description, and priority.\n\n### 9. RISK ASSESSMENT\n| Risk | Likelihood | Impact | Mitigation |\n|------|-----------|--------|------------|\n[At least 5 rows]\n\n### 10. DEFECT MANAGEMENT\n- Tool, severity levels (Critical/Major/Minor/Trivial), bug lifecycle\n\n### 11. TEST SCHEDULE\n| Phase | Activity | Start Date | End Date | Owner |\n|-------|----------|-----------|---------|-------|\n\n### 12. SIGN-OFF\n| Role | Name | Signature | Date |\n|------|------|-----------|------|\n\nReturn ONLY the Markdown test plan. No preamble, no explanation, no code blocks around the content."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [1080, 300],
+      "id": "stlc-agent-testplan",
+      "name": "Generate Test Plan"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract test plan text from agent output and pass forward with full context\nconst testPlan = $json.output || '';\nconst prdText = $('Set PRD Context').item.json.prdText;\nconst projectName = $('Set PRD Context').item.json.projectName;\nconst focusArea = $('Set PRD Context').item.json.focusArea;\n\nreturn [{\n  json: {\n    testPlan,\n    prdText,\n    projectName,\n    focusArea\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 300],
+      "id": "stlc-code-testplan",
+      "name": "Process Test Plan"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate test cases for: {{ $json.projectName }}\nFocus: {{ $json.focusArea }}\n\n--- TEST PLAN SUMMARY (first 1500 chars) ---\n{{ $json.testPlan.substring(0, 1500) }}\n\n--- PRD CONTENT (first 4000 chars) ---\n{{ $json.prdText.substring(0, 4000) }}\n--- END ---",
+        "options": {
+          "systemMessage": "You are a senior QA engineer with 12+ years of experience specializing in test case design. You write test cases so clear and detailed that anyone — even a junior tester — can execute them without questions.\n\nGenerate 25+ test cases for VWO.com (https://app.vwo.com/) LOGIN PAGE and DASHBOARD in CSV format.\n\nAPPLICATION CONTEXT:\n- Login URL: https://app.vwo.com/\n- Fields: Email input, Password input, Login button\n- Valid credentials -> redirects to Dashboard\n- Invalid credentials -> shows inline error message\n\nCSV FORMAT (comma-separated; wrap any field that contains a comma in double quotes):\nTC_ID,Title,Preconditions,Test_Steps,Expected_Result,Test_Data,Priority,Test_Type\n\nTC_ID NAMING:\n- Login tests: TC-VWO-LOGIN-001, TC-VWO-LOGIN-002, ...\n- Dashboard tests: TC-VWO-DASH-001, TC-VWO-DASH-002, ...\n\nCOVER ALL THESE SCENARIOS:\nHappy Path: valid login succeeds; dashboard loads fully\nNegative: invalid email format; wrong password; unregistered email\nEmpty Fields: empty email; empty password; both fields empty\nSecurity: SQL injection in email field; XSS script in email; XSS in password\nBoundary: max-length email (255 chars); min-length password (1 char); max-length password\nUI/UX: error message text visible; field placeholder text; error clears on retype; Forgot Password link clickable; Remember Me checkbox\nKeyboard: login via Enter key; Tab order email->password->button\nDashboard: page title correct; main navigation visible; user profile/menu visible; VWO logo present; key dashboard widgets load\nSession: logout then back-button does not reenter; session persists on refresh\n\nTEST DATA EXAMPLES:\n- Valid: test@vwo.com / TestPass@123\n- Invalid email: notanemail / test@ / @domain.com / user name@test.com\n- SQL injection: ' OR '1'='1 / admin'--\n- XSS: <script>alert(1)</script>\n\nReturn ONLY the CSV data starting with the header row. Absolutely no markdown, no explanations, no code blocks."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [1640, 300],
+      "id": "stlc-agent-testcases",
+      "name": "Generate Test Cases"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and clean CSV output from agent\nlet rawOutput = ($json.output || '').trim();\n\n// Strip markdown code fences if the LLM added them\nif (rawOutput.includes('```')) {\n  const match = rawOutput.match(/```(?:csv)?\\r?\\n([\\s\\S]*?)```/);\n  if (match) rawOutput = match[1].trim();\n}\n\n// Ensure header is present\nconst expectedHeader = 'TC_ID,Title,Preconditions,Test_Steps,Expected_Result,Test_Data,Priority,Test_Type';\nif (!rawOutput.startsWith('TC_ID')) {\n  rawOutput = expectedHeader + '\\n' + rawOutput;\n}\n\nconst testCasesCSV = rawOutput;\nconst testPlan = $('Process Test Plan').item.json.testPlan;\nconst prdText = $('Set PRD Context').item.json.prdText;\nconst projectName = $('Set PRD Context').item.json.projectName;\nconst focusArea = $('Set PRD Context').item.json.focusArea;\n\n// Count rows for logging\nconst rowCount = testCasesCSV.split('\\n').filter(r => r.trim() && !r.startsWith('TC_ID')).length;\nconsole.log(`Test cases generated: ${rowCount}`);\n\nreturn [{\n  json: {\n    testCasesCSV,\n    testPlan,\n    prdText,\n    projectName,\n    focusArea,\n    tcCount: rowCount\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 300],
+      "id": "stlc-code-testcases",
+      "name": "Format CSV Output"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate Playwright TypeScript automation scripts for: {{ $json.projectName }}\nFocus Area: {{ $json.focusArea }}\n\n--- TEST PLAN CONTEXT (first 1200 chars) ---\n{{ $json.testPlan.substring(0, 1200) }}\n--- END ---\n\nTarget URL: https://app.vwo.com/",
+        "options": {
+          "systemMessage": "You are a Playwright TypeScript automation expert with 10+ years of experience. Generate production-ready, fully executable Playwright test scripts using the Page Object Model pattern.\n\nTARGET: VWO.com (https://app.vwo.com/)\n- Login page: email field, password field, login button, error message area\n- Dashboard: navigation menu, user profile menu, VWO logo, dashboard widgets\n\nGENERATE A SINGLE MARKDOWN DOCUMENT with FIVE sections, each with a ## filename header and a typescript code block:\n\n## playwright.config.ts\n- baseURL: https://app.vwo.com\n- Projects: chromium, firefox\n- timeout: 30000\n- screenshot: 'only-on-failure'\n- video: 'retain-on-failure'\n- Read credentials from process.env.VWO_TEST_EMAIL and process.env.VWO_TEST_PASSWORD\n\n## pages/LoginPage.ts\nExport class LoginPage:\n- constructor(page: Page)\n- async goto(): Promise<void>\n- async fillEmail(email: string): Promise<void>\n- async fillPassword(password: string): Promise<void>\n- async clickLogin(): Promise<void>\n- async login(email: string, password: string): Promise<void>  (combo helper)\n- async getErrorMessage(): Promise<string>\n- async clickForgotPassword(): Promise<void>\n- async isLoginButtonEnabled(): Promise<boolean>\n\n## pages/DashboardPage.ts\nExport class DashboardPage:\n- constructor(page: Page)\n- async isLoaded(): Promise<boolean>\n- async getPageTitle(): Promise<string>\n- async isNavMenuVisible(): Promise<boolean>\n- async isUserMenuVisible(): Promise<boolean>\n- async isLogoVisible(): Promise<boolean>\n\n## tests/login.spec.ts\nImport LoginPage and DashboardPage. Tests:\n- /* TC-VWO-LOGIN-001 */ Valid credentials -> navigates to dashboard\n- /* TC-VWO-LOGIN-002 */ Invalid email format -> error message displayed\n- /* TC-VWO-LOGIN-003 */ Wrong password -> error message displayed\n- /* TC-VWO-LOGIN-004 */ Empty email field -> validation message\n- /* TC-VWO-LOGIN-005 */ Empty password field -> validation message\n- /* TC-VWO-LOGIN-006 */ Both fields empty -> validation\n- /* TC-VWO-LOGIN-007 */ SQL injection in email -> graceful error (no crash)\n- /* TC-VWO-LOGIN-008 */ Login using Enter key\n\n## tests/dashboard.spec.ts\nImport LoginPage and DashboardPage. Use beforeEach to login. Tests:\n- /* TC-VWO-DASH-001 */ Dashboard URL and title correct after login\n- /* TC-VWO-DASH-002 */ Navigation menu is visible\n- /* TC-VWO-DASH-003 */ User profile menu is visible\n- /* TC-VWO-DASH-004 */ VWO logo/branding is visible\n\nREQUIREMENTS:\n- TypeScript strict types throughout\n- Use process.env.VWO_TEST_EMAIL and process.env.VWO_TEST_PASSWORD for valid credentials\n- Hardcode invalid test data directly in the tests\n- Add test.describe() grouping\n- Use await expect() assertions with descriptive messages\n- beforeEach should navigate to login page\n\nReturn ONLY the Markdown content. No intro, no outro."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [2200, 300],
+      "id": "stlc-agent-playwright",
+      "name": "Generate Playwright Scripts"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract playwright markdown output and assemble final payload\nconst playwrightMD = ($json.output || '').trim();\nconst testCasesCSV = $('Format CSV Output').item.json.testCasesCSV;\nconst testPlan = $('Process Test Plan').item.json.testPlan;\nconst projectName = $('Set PRD Context').item.json.projectName;\nconst tcCount = $('Format CSV Output').item.json.tcCount;\n\nconsole.log(`Playwright MD length: ${playwrightMD.length} chars`);\n\nreturn [{\n  json: {\n    testPlan,\n    testCasesCSV,\n    playwrightMD,\n    projectName,\n    tcCount\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2480, 300],
+      "id": "stlc-code-playwright",
+      "name": "Format Playwright Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Cloud does not allow 'fs' or 'path' modules.\n// All STLC artifacts are returned as JSON so you can copy them\n// or pipe them into a Google Drive / Gmail / S3 node downstream.\n\nconst timestamp = new Date().toISOString().slice(0, 19).replace('T', '_');\n\nconsole.log('=== STLC ARTIFACTS READY =========================');\nconsole.log('Project     :', $json.projectName);\nconsole.log('Test Cases  :', $json.tcCount);\nconsole.log('Timestamp   :', timestamp);\nconsole.log('=================================================');\n\nreturn [{\n  json: {\n    success: true,\n    project: $json.projectName,\n    testCaseCount: $json.tcCount,\n    timestamp: timestamp,\n    artifacts: {\n      'test_plan.md':              $json.testPlan,\n      'test_cases.csv':            $json.testCasesCSV,\n      'playwright_test_cases.md':  $json.playwrightMD\n    },\n    summary: `STLC artifacts for \"${$json.projectName}\" generated successfully. ${$json.tcCount} test cases.`,\n    note: \"n8n Cloud: fs is not available. Copy artifact content from this output, or add Google Drive / Gmail nodes downstream to save the files.\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2760, 300],
+      "id": "stlc-code-writefiles",
+      "name": "Write Output Files"
+    },
+    {
+      "parameters": {
+        "content": "## STEP 6\nConvert each artifact to a binary file\nand upload all 3 to Google Drive.\n\n⚠️ Set your Google Drive credential\nand optionally change `folderId`.",
+        "width": 280,
+        "height": 130,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [3040, 120],
+      "id": "stlc-sticky-step6",
+      "name": "Sticky — Step 6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split the 3 artifacts into separate items and convert each to binary\n// so the Google Drive node can upload them individually.\nconst artifacts = $json.artifacts;\nconst project   = $json.project;\nconst timestamp = $json.timestamp;\n\nconst files = [\n  { fileName: 'test_plan.md',            content: artifacts['test_plan.md'],            mimeType: 'text/markdown' },\n  { fileName: 'test_cases.csv',           content: artifacts['test_cases.csv'],           mimeType: 'text/csv'      },\n  { fileName: 'playwright_test_cases.md', content: artifacts['playwright_test_cases.md'], mimeType: 'text/markdown' }\n];\n\nconst results = [];\nfor (const file of files) {\n  const binaryData = await this.helpers.prepareBinaryData(\n    Buffer.from(file.content, 'utf8'),\n    file.fileName,\n    file.mimeType\n  );\n  results.push({\n    json:   { fileName: file.fileName, project, timestamp },\n    binary: { fileData: binaryData }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3040, 300],
+      "id": "stlc-code-prepare-drive",
+      "name": "Prepare Files for Drive"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "name": "={{ $json.fileName }}",
+        "inputDataFieldName": "fileData",
+        "folderId": {
+          "__rl": true,
+          "value": "root",
+          "mode": "list",
+          "cachedResultName": "/ (Root)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [3320, 300],
+      "id": "stlc-google-drive-upload",
+      "name": "Upload to Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Upload PRD Form": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Set PRD Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set PRD Context": {
+      "main": [
+        [
+          {
+            "node": "Generate Test Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Test Plan": {
+      "main": [
+        [
+          {
+            "node": "Process Test Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Test Plan": {
+      "main": [
+        [
+          {
+            "node": "Generate Test Cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Test Cases": {
+      "main": [
+        [
+          {
+            "node": "Format CSV Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format CSV Output": {
+      "main": [
+        [
+          {
+            "node": "Generate Playwright Scripts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Playwright Scripts": {
+      "main": [
+        [
+          {
+            "node": "Format Playwright Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Playwright Output": {
+      "main": [
+        [
+          {
+            "node": "Write Output Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Output Files": {
+      "main": [
+        [
+          {
+            "node": "Prepare Files for Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Files for Drive": {
+      "main": [
+        [
+          {
+            "node": "Upload to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Test Plan",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Generate Test Cases",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Generate Playwright Scripts",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "stlc-vwo-v1-0",
+  "meta": {
+    "instanceId": "stlc-vwo-pipeline-001"
+  },
+  "id": "STLC-VWO-PIPELINE-001",
+  "tags": [
+    { "id": "stlc", "name": "STLC" },
+    { "id": "vwo", "name": "VWO" },
+    { "id": "qa", "name": "QA" }
+  ]
+}

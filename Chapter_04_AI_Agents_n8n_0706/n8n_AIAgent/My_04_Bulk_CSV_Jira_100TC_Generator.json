@@ -1,0 +1,543 @@
+{
+  "name": "My_04_Bulk_CSV_Jira_100TC_Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Bulk CSV Jira → 100+ Test Case Generator\n\n**What this workflow does:**\n1. Receives a CSV file (via POST to the Webhook URL)\n2. Parses each Jira ID from the CSV\n3. For every Jira ID the AI Agent will:\n   - **Fetch** the Jira ticket (summary, description, ACs)\n   - **Fetch** the Confluence PRD page\n   - **Generate 100+ test cases** (positive, negative, boundary, security, performance, integration, UI, regression, accessibility)\n   - **Write** every TC row-by-row to Google Sheets\n4. Loops automatically until all Jira IDs in the CSV are processed\n\n**CSV Format Required:**\n```\nJira ID, Confluence Page ID\nPROJ-101, 123456789\nPROJ-102, 123456789\n```\n`Confluence Page ID` column is optional — if absent the agent uses the default PRD page configured in the Confluence tool.",
+        "width": 560,
+        "height": 280,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-2800, -340],
+      "id": "sticky-overview-001",
+      "name": "Sticky Note - Overview"
+    },
+    {
+      "parameters": {
+        "content": "## Setup Checklist\n\n**Before activating this workflow, configure:**\n\n☐ **Jira credentials** — node \"Fetch Jira Ticket\"\n   Uses existing `Jira SW Cloud account` credential\n\n☐ **Confluence** — node \"Fetch Confluence PRD\"\n   1. Replace `YOUR_DOMAIN` with your Atlassian domain\n   2. Replace `YOUR_DEFAULT_PRD_PAGE_ID` with your PRD's numeric page ID\n   3. Set up `Confluence Basic Auth` credential (email + API token)\n\n☐ **Google Sheets** — node \"Write TC to Sheet\"\n   1. Replace Sheet ID with your target spreadsheet ID\n   2. Ensure the sheet has correct column headers\n   Uses existing `Google Sheets OAuth2 API` credential\n\n☐ **LLM** — node \"Groq Brain\"\n   Uses existing `Groq account` credential (qwen3-32b)\n   Swap model for Claude/GPT-4o if needed",
+        "width": 480,
+        "height": 300,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-2800, 0],
+      "id": "sticky-setup-002",
+      "name": "Sticky Note - Setup"
+    },
+    {
+      "parameters": {
+        "content": "## STEP 1: Upload CSV\nPOST your CSV file to this webhook.\nField name: `csvFile`\n\n**Example using curl:**\n```\ncurl -X POST \\\n  -F \"csvFile=@jira_ids.csv\" \\\n  https://your-n8n.com/webhook/jira-bulk-tc-gen\n```",
+        "width": 340,
+        "height": 180,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-2260, -230],
+      "id": "sticky-step1-003",
+      "name": "Sticky Note - Step 1"
+    },
+    {
+      "parameters": {
+        "content": "## STEP 2 & 3\nCSV is parsed → each row becomes one item.\nThe loop picks one Jira ID at a time.",
+        "width": 280,
+        "height": 100,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1970, -180],
+      "id": "sticky-step2-004",
+      "name": "Sticky Note - Step 2"
+    },
+    {
+      "parameters": {
+        "content": "## STEP 4: AI Agent\nFor each Jira ID the agent:\n1. Fetches Jira ticket\n2. Fetches Confluence PRD\n3. Generates 100+ TCs\n4. Writes each TC to Google Sheets\n\nThen loops back for the next ID.",
+        "width": 300,
+        "height": 150,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1460, -210],
+      "id": "sticky-step4-005",
+      "name": "Sticky Note - Step 4"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jira-bulk-tc-gen",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {
+          "binaryPropertyName": "csvFile"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-2200, 0],
+      "id": "node-webhook-001",
+      "name": "Webhook - Upload CSV",
+      "webhookId": "jira-bulk-tc-gen-webhook"
+    },
+    {
+      "parameters": {
+        "operation": "csv",
+        "binaryPropertyName": "csvFile",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [-1900, 0],
+      "id": "node-extract-002",
+      "name": "Parse CSV - Get Jira IDs"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [-1600, 0],
+      "id": "node-splitbatch-003",
+      "name": "Loop Over Jira IDs"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Process this Jira ticket and generate 100+ test cases.\n\nJira ID: {{ $json['Jira ID'] || $json.jira_id || $json.issue_key || $json.JiraID || $json['JIRA ID'] }}\n{{ $json['Confluence Page ID'] ? 'Confluence Page ID: ' + $json['Confluence Page ID'] : 'Use the default PRD Confluence page.' }}\n\nPlease:\n1. Fetch the Jira ticket using the Jira ID above.\n2. Fetch the Confluence PRD page.\n3. Generate a minimum of 100 comprehensive test cases.\n4. Write every test case to Google Sheets (one call per row).",
+        "options": {
+          "systemMessage": "ROLE\nYou are QA Test Forge, an expert QA test-case generation agent. Your mission: given a Jira ticket, read all context sources and produce 100+ fully-structured, executable test cases, then write them to Google Sheets.\n\n# WORKFLOW — execute in this exact order\n\n## 1. FETCH JIRA TICKET\n- Extract the Jira key from the user message (pattern [A-Z]+-[0-9]+, e.g. PROJ-123).\n- Call \"Fetch Jira Ticket\" with the extracted key.\n- Read and note: summary, description, acceptance criteria (AC), priority, labels, components, linked issues.\n- If the ticket is not found, report the error and stop.\n\n## 2. FETCH CONFLUENCE PRD\n- Call \"Fetch Confluence PRD\" tool.\n  - If a Confluence Page ID is given in the message, pass it to the tool.\n  - Otherwise use the default PRD page ID configured in the tool.\n- Extract: requirements, user stories, business rules, flows, constraints, out-of-scope items.\n- Note any edge cases, error states, or special scenarios mentioned in the PRD.\n\n## 3. GENERATE 100+ TEST CASES\nGenerate a MINIMUM of 100 test cases. Cover ALL of the following categories (with suggested minimum counts):\n\n| Category                        | Min Count |\n|---------------------------------|-----------|\n| Positive / Happy Path           | 15        |\n| Negative / Invalid Input        | 20        |\n| Boundary & Edge Cases           | 15        |\n| Acceptance Criteria (per AC)    | ≥1 per AC |\n| Security (SQLi, XSS, auth, IDOR)| 10        |\n| Performance / Load              | 5         |\n| API / Integration               | 10        |\n| UI / UX Validation              | 10        |\n| Regression (based on PRD flows) | 10        |\n| Accessibility / Compatibility   | 5         |\n\nRules for generation:\n- Every TC must trace back to the Jira ticket or PRD. No hallucinated features.\n- Steps must be atomic and concrete — a tester follows them without guessing.\n- Cover all ACs explicitly mentioned in the ticket.\n- Security TCs must reference the actual feature (e.g. login form SQLi, file upload XSS).\n- Boundary TCs must use specific values (e.g. max-1, max, max+1 characters).\n\n## 4. WRITE TEST CASES TO GOOGLE SHEETS\n- For EACH test case, call \"Write TC to Sheet\" EXACTLY ONCE.\n- One call = one sheet row = one test case.\n- NEVER batch multiple TCs into a single tool call.\n- Write all 100+ TCs before finishing.\n\n# COLUMN SCHEMA — use these exact field names\n- Test Case ID      : <JIRA_KEY>-TC-001, -TC-002, ... (zero-pad to 3 digits)\n- Jira Key          : the ticket key\n- Summary           : concise TC title (max 100 chars)\n- Description / Objective : what aspect this TC verifies\n- Preconditions     : required setup / state before execution\n- Test Steps        : numbered, atomic steps\n- Test Data         : specific inputs, credentials, URLs, file names\n- Expected Result   : observable, verifiable outcome\n- Actual Result     : (leave empty)\n- Status            : Not Executed\n- Priority          : High / Medium / Low\n- Severity          : Critical / Major / Minor / Trivial\n- Test Type         : Functional | Negative | Boundary | Security | Performance | Integration | UI | Regression | Accessibility\n- Requirement ID / Link : <JIRA_KEY>/AC-<N> or Confluence section reference\n- Executed By       : (leave empty)\n- Execution Date    : (leave empty)\n- Environment       : QA\n- Comments / Defect ID : (leave empty)\n\n# FINAL REPLY FORMAT\nAfter all rows are written, reply with a summary:\n✅ Ticket: <KEY>\n📊 Total TCs Written: <N>\n📋 Breakdown by category:\n  - Positive: X | Negative: X | Boundary: X\n  - Security: X | Performance: X | Integration: X\n  - UI: X | Regression: X | Accessibility: X"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-1300, 0],
+      "id": "node-agent-004",
+      "name": "AI Test Case Generator Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-32b",
+        "options": {
+          "maxTokens": 16384
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [-1600, 350],
+      "id": "node-groq-005",
+      "name": "Groq Brain (qwen3-32b)",
+      "credentials": {
+        "groqApi": {
+          "id": "ZrAN47BmRD4wwS3y",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "issueKey": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Issue_Key', `The Jira issue key to fetch, e.g. PROJ-123`, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.jiraTool",
+      "typeVersion": 1,
+      "position": [-1300, 350],
+      "id": "node-jira-006",
+      "name": "Fetch Jira Ticket",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "7VpIi84YEqunA7A9",
+          "name": "Jira SW Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Fetches a Confluence page by its numeric Page ID and returns the full page content (title, body, labels). Use this to retrieve the PRD, feature specification, or any documentation linked to the Jira ticket.\n\nIf the user message provides a specific Confluence Page ID, use that. Otherwise use the default PRD page: YOUR_DEFAULT_PRD_PAGE_ID",
+        "method": "GET",
+        "url": "=https://YOUR_DOMAIN.atlassian.net/wiki/rest/api/content/{{ /*n8n-auto-generated-fromAI-override*/ $fromAI('confluence_page_id', 'Numeric Confluence page ID. If not specified by the user, use YOUR_DEFAULT_PRD_PAGE_ID', 'string') }}?expand=body.storage,metadata.labels,ancestors,version",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [-1000, 350],
+      "id": "node-confluence-007",
+      "name": "Fetch Confluence PRD",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "YOUR_CONFLUENCE_CRED_ID",
+          "name": "Confluence Basic Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1MgOPV1i_VzUSyfF4PZynbWWJeSNo5LaVGKcR80HLJOs",
+          "mode": "list",
+          "cachedResultName": "PRD_Test Cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1MgOPV1i_VzUSyfF4PZynbWWJeSNo5LaVGKcR80HLJOs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1MgOPV1i_VzUSyfF4PZynbWWJeSNo5LaVGKcR80HLJOs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Test Case ID": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Test_Case_ID', `e.g. PROJ-123-TC-001`, 'string') }}",
+            "Jira Key": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Jira_Key', ``, 'string') }}",
+            "Summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}",
+            "Description / Objective": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description___Objective', ``, 'string') }}",
+            "Preconditions": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Preconditions', ``, 'string') }}",
+            "Test Steps": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Test_Steps', ``, 'string') }}",
+            "Test Data": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Test_Data', ``, 'string') }}",
+            "Expected Result": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Expected_Result', ``, 'string') }}",
+            "Actual Result": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Actual_Result', ``, 'string') }}",
+            "Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Status', ``, 'string') }}",
+            "Priority": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Priority', ``, 'string') }}",
+            "Severity": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Severity', ``, 'string') }}",
+            "Test Type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Test_Type', ``, 'string') }}",
+            "Requirement ID / Link": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Requirement_ID___Link', ``, 'string') }}",
+            "Executed By": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Executed_By', ``, 'string') }}",
+            "Execution Date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Execution_Date', ``, 'string') }}",
+            "Environment": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Environment', ``, 'string') }}",
+            "Comments / Defect ID": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Comments___Defect_ID', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "Test Case ID"
+          ],
+          "schema": [
+            {
+              "id": "Test Case ID",
+              "displayName": "Test Case ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Jira Key",
+              "displayName": "Jira Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description / Objective",
+              "displayName": "Description / Objective",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preconditions",
+              "displayName": "Preconditions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Steps",
+              "displayName": "Test Steps",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Data",
+              "displayName": "Test Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Expected Result",
+              "displayName": "Expected Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Actual Result",
+              "displayName": "Actual Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Type",
+              "displayName": "Test Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Requirement ID / Link",
+              "displayName": "Requirement ID / Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Executed By",
+              "displayName": "Executed By",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Execution Date",
+              "displayName": "Execution Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Environment",
+              "displayName": "Environment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Comments / Defect ID",
+              "displayName": "Comments / Defect ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [-700, 350],
+      "id": "node-sheets-write-008",
+      "name": "Write TC to Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4OZTCQQKbLbfzick",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Upload CSV": {
+      "main": [
+        [
+          {
+            "node": "Parse CSV - Get Jira IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse CSV - Get Jira IDs": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Jira IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Jira IDs": {
+      "main": [
+        [
+          {
+            "node": "AI Test Case Generator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Test Case Generator Agent": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Jira IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Brain (qwen3-32b)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Test Case Generator Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Jira Ticket": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Test Case Generator Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Confluence PRD": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Test Case Generator Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write TC to Sheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Test Case Generator Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c4f2a1e0-8b3d-4f7a-9c2e-1d5b8e3a7f9c",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "8e89d20db48d09487760acc49b231a70c034efc44b3e769f501530571d8f8a46"
+  },
+  "nodeGroups": [],
+  "id": "bulk-csv-jira-100tc-gen",
+  "tags": [
+    {
+      "createdAt": "2026-06-18T00:00:00.000Z",
+      "updatedAt": "2026-06-18T00:00:00.000Z",
+      "id": "tag-bulk-tc-gen",
+      "name": "bulk-test-gen"
+    }
+  ]
+}
