@@ -1,0 +1,58 @@
+export const COLUMNS = [
+  {
+    id: 'wishlist',
+    label: 'Wishlist',
+    accent: 'bg-blue-500',
+    border: 'border-l-blue-500',
+    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300',
+    headerText: 'text-blue-700 dark:text-blue-300',
+    dropHover: 'ring-2 ring-blue-400',
+  },
+  {
+    id: 'applied',
+    label: 'Applied',
+    accent: 'bg-amber-500',
+    border: 'border-l-amber-500',
+    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300',
+    headerText: 'text-amber-700 dark:text-amber-300',
+    dropHover: 'ring-2 ring-amber-400',
+  },
+  {
+    id: 'followup',
+    label: 'Follow-up',
+    accent: 'bg-purple-500',
+    border: 'border-l-purple-500',
+    badge: 'bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300',
+    headerText: 'text-purple-700 dark:text-purple-300',
+    dropHover: 'ring-2 ring-purple-400',
+  },
+  {
+    id: 'interview',
+    label: 'Interview',
+    accent: 'bg-cyan-500',
+    border: 'border-l-cyan-500',
+    badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/60 dark:text-cyan-300',
+    headerText: 'text-cyan-700 dark:text-cyan-300',
+    dropHover: 'ring-2 ring-cyan-400',
+  },
+  {
+    id: 'offer',
+    label: 'Offer',
+    accent: 'bg-green-500',
+    border: 'border-l-green-500',
+    badge: 'bg-green-100 text-green-700 dark:bg-green-900/60 dark:text-green-300',
+    headerText: 'text-green-700 dark:text-green-300',
+    dropHover: 'ring-2 ring-green-400',
+  },
+  {
+    id: 'rejected',
+    label: 'Rejected',
+    accent: 'bg-rose-500',
+    border: 'border-l-rose-500',
+    badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300',
+    headerText: 'text-rose-700 dark:text-rose-300',
+    dropHover: 'ring-2 ring-rose-400',
+  },
+];
+
+export const COLUMN_IDS = COLUMNS.map((c) => c.id);
