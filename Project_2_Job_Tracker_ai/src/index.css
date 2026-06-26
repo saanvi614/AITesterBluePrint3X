@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background-color: #2a2a2a; border-radius: 4px; }
+*::-webkit-scrollbar-thumb:hover { background-color: #444; }
+
+.light *::-webkit-scrollbar-thumb { background-color: #cbd5e1; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.drag-over-column {
+  background-color: rgba(59, 130, 246, 0.05) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.card-dragging {
+  opacity: 0.35;
+  pointer-events: none;
+}
