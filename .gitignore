@@ -23,12 +23,13 @@ Thumbs.db
 # IDE / editor scratch
 .commandcode/
 .env
+.env.local
+.env.*.local
 env
 
 node_modules/
 dist/
 .tmp/
-.env
 .vercel/
 output/*.md
 

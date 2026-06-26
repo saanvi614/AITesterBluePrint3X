@@ -1,0 +1,32 @@
+{
+  "name": "contentforge",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3030",
+    "build": "next build",
+    "start": "next start --port 3030",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "groq-sdk": "^0.7.0",
+    "@google/genai": "^0.14.0",
+    "exceljs": "^4.4.0",
+    "node-cron": "^3.0.3",
+    "dotenv": "^16.4.5",
+    "react-markdown": "^9.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/node-cron": "^3.0.11",
+    "tailwindcss": "^3.4.4",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38"
+  }
+}
