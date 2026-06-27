@@ -5,6 +5,7 @@ import { ContentRow, PipelineState } from '@/lib/types';
 interface Props {
   today: ContentRow | null;
   status: (PipelineState & { rowCount?: number; lastModified?: string }) | null;
+  onSettingsClick?: () => void;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -38,7 +39,7 @@ function Card({ title, value, sub }: { title: string; value: React.ReactNode; su
   );
 }
 
-export function StatusCards({ today, status }: Props) {
+export function StatusCards({ today, status, onSettingsClick }: Props) {
   const statusChip = today?.status ? (
     <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[today.status] ?? ''}`}>
       {today.status}
@@ -62,6 +63,14 @@ export function StatusCards({ today, status }: Props) {
         <span className="text-xs text-gray-500 mr-1">API Keys:</span>
         <ApiKeyBadge ok={status?.groqKeyOk ?? false} label="Groq" />
         <ApiKeyBadge ok={status?.geminiKeyOk ?? false} label="Gemini" />
+        {(!status?.groqKeyOk || !status?.geminiKeyOk) && onSettingsClick && (
+          <button
+            onClick={onSettingsClick}
+            className="text-xs text-sky-400 hover:text-sky-300 underline underline-offset-2 transition-colors"
+          >
+            Configure keys
+          </button>
+        )}
         <span className="ml-auto text-xs text-gray-500">
           Next run: <span className="text-gray-300">{nextRunDisplay}</span>
         </span>

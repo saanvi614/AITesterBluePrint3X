@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { runPipeline, getPipelineState } from '@/lib/pipeline';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const state = getPipelineState();
   if (state.running) {
     return NextResponse.json(
@@ -10,8 +10,11 @@ export async function POST() {
     );
   }
 
-  // Fire and forget — caller polls /api/status for progress
-  runPipeline().catch((err) => {
+  const groqKey   = req.headers.get('x-groq-key')   ?? undefined;
+  const geminiKey = req.headers.get('x-gemini-key')  ?? undefined;
+  const keys      = (groqKey || geminiKey) ? { groqKey, geminiKey } : undefined;
+
+  runPipeline(keys).catch((err) => {
     console.error('[/api/run] Unhandled pipeline error:', err);
   });
 

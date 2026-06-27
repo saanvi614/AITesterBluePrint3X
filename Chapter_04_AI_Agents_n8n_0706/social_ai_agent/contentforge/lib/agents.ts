@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
 import { excelManager } from './excelManager';
-import { KEYWORD_POOL } from './types';
+import { KEYWORD_POOL, ApiKeys } from './types';
 
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const GEMINI_IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation';
@@ -12,14 +12,16 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function getGroq(): Groq {
-  if (!process.env.GROQ_API_KEY) throw new Error('GROQ_API_KEY not set');
-  return new Groq({ apiKey: process.env.GROQ_API_KEY });
+function getGroq(keys?: ApiKeys): Groq {
+  const key = keys?.groqKey ?? process.env.GROQ_API_KEY;
+  if (!key) throw new Error('GROQ_API_KEY not set');
+  return new Groq({ apiKey: key });
 }
 
-function getGemini(): GoogleGenAI {
-  if (!process.env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not set');
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+function getGemini(keys?: ApiKeys): GoogleGenAI {
+  const key = keys?.geminiKey ?? process.env.GEMINI_API_KEY;
+  if (!key) throw new Error('GEMINI_API_KEY not set');
+  return new GoogleGenAI({ apiKey: key });
 }
 
 async function groqChat(groq: Groq, prompt: string, maxTokens = 4096): Promise<string> {
@@ -34,9 +36,9 @@ async function groqChat(groq: Groq, prompt: string, maxTokens = 4096): Promise<s
 
 // ─── Agent 1 — Topic Generator ──────────────────────────────────────────────
 
-export async function agent1TopicGenerator(): Promise<string> {
+export async function agent1TopicGenerator(keys?: ApiKeys): Promise<string> {
   console.log('[Agent1] Generating topic for', todayISO());
-  const groq = getGroq();
+  const groq = getGroq(keys);
   const existing = await excelManager.readAll();
   const usedTopics = existing.map((r) => r.topic).join(', ');
   const today = todayISO();
@@ -77,10 +79,10 @@ Rules:
 
 // ─── Agent 2 — Content Writer ────────────────────────────────────────────────
 
-export async function agent2ContentWriter(): Promise<void> {
+export async function agent2ContentWriter(keys?: ApiKeys): Promise<void> {
   const today = todayISO();
   console.log('[Agent2] Writing content for', today);
-  const groq = getGroq();
+  const groq = getGroq(keys);
 
   const row = await excelManager.readByDate(today);
   if (!row) throw new Error(`No row found for ${today}`);
@@ -177,10 +179,10 @@ Return only the article markdown.
 
 // ─── Agent 3 — Image Generator (Gemini) ─────────────────────────────────────
 
-export async function agent3ImageGenerator(): Promise<void> {
+export async function agent3ImageGenerator(keys?: ApiKeys): Promise<void> {
   const today = todayISO();
   console.log('[Agent3] Generating images for', today);
-  const gemini = getGemini();
+  const gemini = getGemini(keys);
 
   const row = await excelManager.readByDate(today);
   if (!row) throw new Error(`No row found for ${today}`);
@@ -262,12 +264,12 @@ export async function agent3ImageGenerator(): Promise<void> {
 
 // ─── API Key Health Check ─────────────────────────────────────────────────────
 
-export async function checkApiKeys(): Promise<{ groqOk: boolean; geminiOk: boolean }> {
+export async function checkApiKeys(keys?: ApiKeys): Promise<{ groqOk: boolean; geminiOk: boolean }> {
   let groqOk = false;
   let geminiOk = false;
 
   try {
-    const groq = getGroq();
+    const groq = getGroq(keys);
     await groq.chat.completions.create({
       model: GROQ_MODEL,
       messages: [{ role: 'user', content: 'ping' }],
@@ -279,7 +281,7 @@ export async function checkApiKeys(): Promise<{ groqOk: boolean; geminiOk: boole
   }
 
   try {
-    const gemini = getGemini();
+    const gemini = getGemini(keys);
     await gemini.models.generateContent({
       model: 'gemini-2.0-flash',
       contents: 'ping',

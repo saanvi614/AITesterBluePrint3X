@@ -1,5 +1,10 @@
 export type ContentStatus = 'Pending' | 'Writing' | 'Imaging' | 'Done' | 'Error';
 
+export interface ApiKeys {
+  groqKey?: string;
+  geminiKey?: string;
+}
+
 export interface ContentRow {
   date: string;           // ISO date string YYYY-MM-DD
   topic: string;

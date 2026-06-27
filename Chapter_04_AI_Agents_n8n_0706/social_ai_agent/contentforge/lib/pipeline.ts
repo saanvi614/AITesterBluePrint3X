@@ -1,5 +1,5 @@
 import { agent1TopicGenerator, agent2ContentWriter, agent3ImageGenerator } from './agents';
-import { PipelineState } from './types';
+import { PipelineState, ApiKeys } from './types';
 
 const state: PipelineState = {
   running: false,
@@ -24,7 +24,7 @@ export function setApiKeyStatus(groqOk: boolean, geminiOk: boolean) {
   state.geminiKeyOk = geminiOk;
 }
 
-export async function runPipeline(): Promise<void> {
+export async function runPipeline(keys?: ApiKeys): Promise<void> {
   if (state.running) {
     console.log('[Pipeline] Already running, skipping');
     return;
@@ -37,15 +37,15 @@ export async function runPipeline(): Promise<void> {
   try {
     state.currentStep = 'Agent1: Generating topic';
     console.log('[Pipeline]', state.currentStep);
-    await agent1TopicGenerator();
+    await agent1TopicGenerator(keys);
 
     state.currentStep = 'Agent2: Writing content';
     console.log('[Pipeline]', state.currentStep);
-    await agent2ContentWriter();
+    await agent2ContentWriter(keys);
 
     state.currentStep = 'Agent3: Generating images';
     console.log('[Pipeline]', state.currentStep);
-    await agent3ImageGenerator();
+    await agent3ImageGenerator(keys);
 
     state.currentStep = null;
     console.log('[Pipeline] Complete');
